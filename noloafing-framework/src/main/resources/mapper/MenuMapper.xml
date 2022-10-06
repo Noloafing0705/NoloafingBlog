@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.noloafing.mapper.MenuMapper">
+    <!--根据userId查询对应的perms-->
+    <select id="getPartMenus" resultType="java.lang.String">
+        select distinct ifnull(perms, '')
+        from sys_user_role sur
+                 left join sys_role_menu srm on sur.role_id = srm.role_id
+                 left join sys_menu sm on srm.menu_id = sm.id
+        where
+            sur.user_id = #{userId}
+          and sm.menu_type in ('C','F')
+          and sm.status = 0
+          and sm.del_flag = 0
+    </select>
+    <select id="getAllMenus" resultType="com.noloafing.domain.entity.Menu">
+        select id,menu_name,parent_id,order_num `orderNum`,`path`,`component`,is_frame,menu_type,`visible`,ifnull(perms,'') perms,`icon`,`create_Time`,`status`
+        from sys_menu
+        where menu_type in ('C','M')
+          and status = 0
+          and del_flag = 0
+        order by
+            parent_id,order_num;
+    </select>
+    <select id="getMenusByUserId" resultType="com.noloafing.domain.entity.Menu">
+        select distinct sm.id,sm.menu_name,sm.parent_id,sm.order_num ,sm.`path`,sm.`component`,sm.is_frame,menu_type,sm.`visible`,ifnull(`perms`,'') perms,`icon`,sm.`create_Time`,sm.status
+        from sys_user_role sur
+                 left join sys_role_menu srm on sur.role_id = srm.role_id
+                 left join sys_menu sm on srm.menu_id = sm.id
+        where sur.user_id = #{userId}
+          and sm.menu_type in ('C','M')
+          and sm.status = 0
+          and sm.del_flag = 0
+        order by
+            sm.parent_id,sm.order_num;
+    </select>
+</mapper>
