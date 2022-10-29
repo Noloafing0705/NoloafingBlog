@@ -2,6 +2,7 @@ package com.noloafing.constant;
 
 public class SystemConstant {
     public static final String BLOG_TOKEN = "token";
+    public static final String REFRESH_TOKEN = "refreshToken";
     public static final String REDIS_PREFIX = "blogUser_";
     public static final String REDIS_ADMIN_PREFIX = "blogAdmin_";
     public static final String NORMAL_STATUS = "0";

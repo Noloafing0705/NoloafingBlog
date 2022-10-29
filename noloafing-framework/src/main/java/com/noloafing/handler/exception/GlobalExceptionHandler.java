@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SystemException.class)
     public ResponseResult systemException(SystemException e){
         log.error("出现预期内异常! {}",e);
-        return ResponseResult.errorResult(e.getCode(),"WARNING! SYSTEM ERROR!");
+        return ResponseResult.errorResult(e.getCode(),e.getMsg());
     }
 
     // 由于全局异常会在自定义的AccessDeniedException异常处理类之前捕获该异常 所以返回信息不是我们自定义的
@@ -30,6 +30,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseResult exceptionHandler(Exception e){
         log.error("出现预期外异常! {}",e);
-        return ResponseResult.errorResult(AppHttpCodeEnum.SYSTEM_ERROR.getCode(),"EXCEPTED ERROR!");
+        return ResponseResult.errorResult(AppHttpCodeEnum.SYSTEM_ERROR.getCode(),e.getMessage());
     }
 }

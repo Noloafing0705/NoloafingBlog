@@ -36,4 +36,6 @@ public class CommentVo {
     private String toCommentUserName;
     //子评论
     private List<CommentVo> children;
+    //用户头像
+    private String avatar;
 }

@@ -17,7 +17,9 @@ import java.util.UUID;
 public class JwtUtil {
 
     //有效期为
-    public static final Long JWT_TTL = 60 * 60 *1000L;// 60 * 60 *1000  一个小时
+    public static final Long JWT_TTL = 60 * 60 *1000*2L;// 60 * 60 *1000  两个小时
+    //有效期为
+    public static final Long JWT_TTL_WEEK = 60 * 60 * 1000 *24*7L;// 60 * 60 *1000  一周
     //设置秘钥明文
     public static final String JWT_KEY = "sangeng";
 
@@ -31,8 +33,8 @@ public class JwtUtil {
      * @param subject token中要存放的数据（json格式）
      * @return
      */
-    public static String createJWT(String subject) {
-        JwtBuilder builder = getJwtBuilder(subject, null, getUUID());// 设置过期时间
+    public static String createJWT(String subject,Long nowMillis) {
+        JwtBuilder builder = getJwtBuilder(subject, null, getUUID(),nowMillis);// 设置过期时间
         return builder.compact();
     }
 
@@ -42,15 +44,17 @@ public class JwtUtil {
      * @param ttlMillis token超时时间
      * @return
      */
-    public static String createJWT(String subject, Long ttlMillis) {
-        JwtBuilder builder = getJwtBuilder(subject, ttlMillis, getUUID());// 设置过期时间
+    public static String createJWT(String subject, Long ttlMillis,Long nowMillis) {
+        JwtBuilder builder = getJwtBuilder(subject, ttlMillis, getUUID(),nowMillis);// 设置过期时间
         return builder.compact();
     }
 
-    private static JwtBuilder getJwtBuilder(String subject, Long ttlMillis, String uuid) {
+    private static JwtBuilder getJwtBuilder(String subject, Long ttlMillis, String uuid,Long nowMillis) {
         SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
         SecretKey secretKey = generalKey();
-        long nowMillis = System.currentTimeMillis();
+        if (nowMillis == null){
+            nowMillis = System.currentTimeMillis();
+        }
         Date now = new Date(nowMillis);
         if(ttlMillis==null){
             ttlMillis=JwtUtil.JWT_TTL;
@@ -60,7 +64,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setId(uuid)              //唯一的ID
                 .setSubject(subject)   // 主题  可以是JSON数据
-                .setIssuer("sg")     // 签发者
+                .setIssuer("noloafing")     // 签发者
                 .setIssuedAt(now)      // 签发时间
                 .signWith(signatureAlgorithm, secretKey) //使用HS256对称加密算法签名, 第二个参数为秘钥
                 .setExpiration(expDate);
@@ -73,8 +77,8 @@ public class JwtUtil {
      * @param ttlMillis
      * @return
      */
-    public static String createJWT(String id, String subject, Long ttlMillis) {
-        JwtBuilder builder = getJwtBuilder(subject, ttlMillis, id);// 设置过期时间
+    public static String createJWT(String id, String subject, Long ttlMillis,Long nowMillis) {
+        JwtBuilder builder = getJwtBuilder(subject, ttlMillis, id,nowMillis);// 设置过期时间
         return builder.compact();
     }
 

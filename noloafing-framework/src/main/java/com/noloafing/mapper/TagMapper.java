@@ -1,7 +1,6 @@
 package com.noloafing.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.noloafing.domain.beanVO.TagNameVo;
 import com.noloafing.domain.entity.Tag;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;

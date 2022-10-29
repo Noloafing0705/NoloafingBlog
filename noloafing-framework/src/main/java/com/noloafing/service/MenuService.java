@@ -1,6 +1,7 @@
 package com.noloafing.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.noloafing.domain.ResponseResult;
 import com.noloafing.domain.beanVO.MenuVo;
 import com.noloafing.domain.entity.Menu;
 
@@ -19,4 +20,7 @@ public interface MenuService extends IService<Menu> {
 
     List<MenuVo> getRouters(Long userId);
 
+    ResponseResult getMenuTree();
+
+    ResponseResult getRoleMenuTree(Long id);
 }

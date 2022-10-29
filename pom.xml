@@ -40,7 +40,7 @@
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
-                <version>1.2.33</version>
+                <version>1.2.83</version>
             </dependency>
             <!--jwt依赖-->
             <dependency>
@@ -85,8 +85,19 @@
                 <artifactId>mybatisplus-plus</artifactId>
                 <version>1.5.1-RELEASE</version>
             </dependency>
-            <!--lombok-->
-
+            <!-- Drud连接池-->
+            <!-- https://mvnrepository.com/artifact/com.alibaba/druid-spring-boot-starter -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid</artifactId>
+                <version>1.2.6</version>
+            </dependency>
+            <!--log4j-->
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>1.2.17</version>
+            </dependency>
         </dependencies>
 
 

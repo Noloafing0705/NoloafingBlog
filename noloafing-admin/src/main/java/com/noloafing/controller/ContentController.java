@@ -1,7 +1,6 @@
 package com.noloafing.controller;
 
 import com.noloafing.domain.ResponseResult;
-import com.noloafing.domain.beanVO.ArticleInfoVo;
 import com.noloafing.domain.beanVO.ArticleUpdateVo;
 import com.noloafing.domain.dto.ArticleDto;
 import com.noloafing.domain.dto.BatchIds;
@@ -11,6 +10,7 @@ import com.noloafing.exception.SystemException;
 import com.noloafing.service.*;
 import com.noloafing.utils.BeanCopyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,13 +28,13 @@ public class ContentController {
     @Autowired
     private ArticleService articleService;
 
-
-
+    @PreAuthorize("@perm.hasPermission('content:article:list')")
     @GetMapping("/content/category/listAllCategory")
     public ResponseResult listAllCategory(){
         return categoryService.listAllCategory();
     }
 
+    @PreAuthorize("@perm.hasPermission('content:article:writer')")
     @PostMapping("/upload")
     public ResponseResult uploadImg(@RequestParam("img") MultipartFile img){
         try {
@@ -46,6 +46,7 @@ public class ContentController {
 
     }
 
+    @PreAuthorize("@perm.hasPermission('content:article:writer')")
     @PostMapping("/content/article")
     public ResponseResult writeArticle(@RequestBody ArticleDto articleDto){
         if (Objects.isNull(articleDto)|| !StringUtils.hasText(articleDto.getContent())){
@@ -67,22 +68,25 @@ public class ContentController {
         return articleService.saveArticle(article);
     }
 
+    @PreAuthorize("@perm.hasPermission('content:article:list')")
     @GetMapping("/content/article/list")
     public ResponseResult listArticle(Integer pageNum,Integer pageSize,String title,String summary ){
         return  articleService.getAllArticles(pageNum,pageSize,title,summary);
     }
 
+    @PreAuthorize("@perm.hasPermission('content:article:list')")
     @GetMapping("/content/article/{id}")
     public ResponseResult getArticleInfo(@PathVariable("id")Long id){
         return  articleService.getArticleInfo(id);
     }
 
-
+    @PreAuthorize("@perm.hasPermission('content:article:list')")
     @PutMapping("/content/article")
     public ResponseResult update(@RequestBody ArticleUpdateVo articleUpdateVo){
         return articleService.updateArticle(articleUpdateVo);
     }
 
+    @PreAuthorize("@perm.hasPermission('content:article:list')")
     @DeleteMapping("/content/article/{id}")
     public ResponseResult deleteArticle(@PathVariable("id")Long id){
         if (Objects.isNull(id)||id<=0){
@@ -92,6 +96,7 @@ public class ContentController {
         return b == true ? ResponseResult.okResult():ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
     }
 
+    @PreAuthorize("@perm.hasPermission('content:article:list')")
     @DeleteMapping("/content/article/")
     public ResponseResult deleteArticle(@RequestBody BatchIds batchIds){
         if (Objects.isNull(batchIds) || batchIds.getIds().size()<=0){

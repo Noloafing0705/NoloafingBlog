@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Date;
 import java.util.Objects;
 
 @Service
@@ -43,12 +44,17 @@ public class BlogLoginServiceImpl extends ServiceImpl<UserMapper, User> implemen
         //获取认证之后的LoginUser
         LoginUser loginUser = (LoginUser) authenticate.getPrincipal();
         String userId = loginUser.getUser().getId().toString();
-        String jwt = JwtUtil.createJWT(userId);
+        //系统当前时间 记作登录时间
+        long nowMillis = System.currentTimeMillis();
+        String jwt = JwtUtil.createJWT(userId,nowMillis);
+        loginUser.setIssueAt(new Date(nowMillis));
+        //refreshToken
+        String refreshJwt = JwtUtil.createJWT(userId, JwtUtil.JWT_TTL_WEEK, null);
         //用户信息存入Redis
         redisCache.setCacheObject(SystemConstant.REDIS_PREFIX +userId, loginUser);
         //token 与 userInfo进行封装，返回前端
         UserInfoVo userInfoVo = BeanCopyUtils.copyBean(loginUser.getUser(), UserInfoVo.class);
-        BlogUserLoginVo blogUserLoginVo = new BlogUserLoginVo(jwt, userInfoVo);
+        BlogUserLoginVo blogUserLoginVo = new BlogUserLoginVo(jwt,refreshJwt, userInfoVo);
         return ResponseResult.okResult(blogUserLoginVo);
     }
 }

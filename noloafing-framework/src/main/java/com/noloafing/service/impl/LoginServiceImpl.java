@@ -10,12 +10,15 @@ import com.noloafing.service.LoginService;
 import com.noloafing.utils.JwtUtil;
 import com.noloafing.utils.RedisCache;
 import com.noloafing.utils.SecurityUtils;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -42,7 +45,10 @@ public class LoginServiceImpl implements LoginService {
         //获取认证之后的LoginUser
         LoginUser loginUser = (LoginUser) authenticate.getPrincipal();
         String userId = loginUser.getUser().getId().toString();
-        String jwt = JwtUtil.createJWT(userId);
+        //系统当前时间 记作登录时间
+        long nowMillis = System.currentTimeMillis();
+        String jwt = JwtUtil.createJWT(userId,nowMillis);
+        loginUser.setIssueAt(new Date(nowMillis));
         //用户信息存入Redis
         redisCache.setCacheObject(SystemConstant.REDIS_ADMIN_PREFIX +userId, loginUser);
         Map<String, String> map = new HashMap<>();

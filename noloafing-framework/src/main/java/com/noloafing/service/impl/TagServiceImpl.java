@@ -7,18 +7,22 @@ import com.noloafing.domain.ResponseResult;
 import com.noloafing.domain.beanVO.PageVo;
 import com.noloafing.domain.beanVO.TagVo;
 import com.noloafing.domain.dto.TagListDto;
+import com.noloafing.domain.entity.ArticleTag;
 import com.noloafing.domain.entity.Tag;
 import com.noloafing.enums.AppHttpCodeEnum;
 import com.noloafing.exception.SystemException;
+import com.noloafing.mapper.ArticleTagMapper;
 import com.noloafing.mapper.TagMapper;
 import com.noloafing.service.TagService;
 import com.noloafing.utils.BeanCopyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * 标签(Tag)表服务实现类
@@ -31,6 +35,9 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
 
     @Autowired
     private TagMapper tagMapper;
+
+    @Autowired
+    private ArticleTagMapper articleTagMapper;
 
     @Override
     public ResponseResult<PageVo> listPageTags(Integer pageNum, Integer pageSize, TagListDto tagListDto) {
@@ -73,12 +80,18 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         return ResponseResult.okResult();
     }
 
+    @Transactional
     @Override
     public ResponseResult deleteTag(Integer id) {
         if (Objects.isNull(id)|| id<=0){
             throw new SystemException(AppHttpCodeEnum.INVALID_ID);
         }
+        //删除tag标签
         tagMapper.deleteById(id);
+        //删除article_tag表关联关系
+        LambdaQueryWrapper<ArticleTag> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ArticleTag::getTagId,id);
+        articleTagMapper.delete(queryWrapper);
         return ResponseResult.okResult();
     }
 
@@ -121,6 +134,18 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         }
         Tag tag = tagMapper.selectById(id);
         return ResponseResult.okResult(BeanCopyUtils.copyBean(tag, TagVo.class));
+    }
+
+    @Transactional
+    @Override
+    public ResponseResult deleteTagByIds(List<Long> ids) {
+        ids.forEach(id -> {
+            tagMapper.deleteById(id);
+            LambdaQueryWrapper<ArticleTag> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(ArticleTag::getTagId,id);
+            articleTagMapper.delete(queryWrapper);
+        });
+        return ResponseResult.okResult();
     }
 
 

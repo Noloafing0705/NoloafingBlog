@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -16,6 +17,13 @@ public class LoginUser implements UserDetails {
     private User user;
     //权限信息
     private List<String> perms;
+    //用户上一次登录时间
+    private Date issueAt;
+
+    public LoginUser(User user,List<String> perms){
+        this.user = user;
+        this.perms = perms;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

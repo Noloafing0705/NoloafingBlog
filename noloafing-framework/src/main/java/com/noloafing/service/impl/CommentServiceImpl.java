@@ -48,6 +48,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         Page<Comment> page = new Page(pageNum, pageSize);
         page(page, queryWrapper);
         List<Comment> comments = page.getRecords();
+        //获取用户头像
         //vo封装
         List<CommentVo> commentVos = commentVoList(comments);
         //封装子评论
@@ -69,6 +70,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             throw new SystemException(AppHttpCodeEnum.CONTENT_NOT_NULL);
         }
         commentMapper.insert(comment);
+
         return ResponseResult.okResult();
     }
 

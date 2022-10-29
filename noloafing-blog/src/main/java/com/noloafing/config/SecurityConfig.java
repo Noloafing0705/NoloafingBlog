@@ -70,6 +70,7 @@ public class SecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
                 //配置授权异常处理器
                 .accessDeniedHandler(accessDeniedHandler)
-                .and().build();
+                .and()
+                .build();
     }
 }

@@ -1,6 +1,8 @@
 package com.noloafing.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.noloafing.domain.ResponseResult;
+import com.noloafing.domain.dto.RoleDto;
 import com.noloafing.domain.entity.Role;
 
 import java.util.List;
@@ -15,4 +17,12 @@ import java.util.List;
 public interface RoleService extends IService<Role> {
 
     List<String> getRolesById(Long userId);
+
+    ResponseResult getRoles(Integer pageNum, Integer pageSize, String status, String roleName);
+
+    ResponseResult addRole(RoleDto roleDto);
+
+    ResponseResult deleteRoleById(Long id);
+
+    ResponseResult deleteRoleByIds(List<Long> ids);
 }

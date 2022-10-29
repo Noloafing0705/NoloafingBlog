@@ -11,8 +11,8 @@ import com.noloafing.domain.entity.Link;
 import com.noloafing.enums.AppHttpCodeEnum;
 import com.noloafing.service.LinkService;
 import com.noloafing.utils.BeanCopyUtils;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,11 +24,13 @@ public class LinkController {
     @Autowired
     private LinkService linkService;
 
+    @PreAuthorize("@perm.hasPermission('content:link:list')")
     @GetMapping("/list")
-    public ResponseResult list(@Param("pageNum")Integer pageNum,@Param("pageSize")Integer pageSize,@Param("name")String name,@Param("status") String status){
+    public ResponseResult list(Integer pageNum,Integer pageSize,String name,String status){
         return linkService.pageLink(pageNum,pageSize,name,status);
     }
 
+    @PreAuthorize("@perm.hasPermission('content:link:query')")
     @GetMapping("/{id}")
     public ResponseResult getLink(@PathVariable("id") Long id){
         if (Objects.isNull(id)||id <= 0){
@@ -41,6 +43,7 @@ public class LinkController {
         return ResponseResult.okResult(vo);
     }
 
+    @PreAuthorize("@perm.hasPermission('content:link:add')")
     @PostMapping()
     public ResponseResult add(@RequestBody LinkShowDto linkShowDto){
         if (Objects.isNull(linkShowDto)){
@@ -55,8 +58,9 @@ public class LinkController {
     }
 
 
+    @PreAuthorize("@perm.hasPermission('content:link:edit')")
     @PutMapping()
-    public ResponseResult add(@RequestBody LinkEditDto linkEditDto){
+    public ResponseResult edit(@RequestBody LinkEditDto linkEditDto){
         if (Objects.isNull(linkEditDto)||Objects.isNull(linkEditDto.getId())){
             return ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
         }
@@ -67,6 +71,7 @@ public class LinkController {
         boolean updated = linkService.updateById(link);
         return updated == true?ResponseResult.okResult():ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
     }
+    @PreAuthorize("@perm.hasPermission('content:link:edit')")
     @PutMapping("/changeLinkStatus")
     public ResponseResult changeStatus(@RequestBody ChangeStatusDto changeStatus){
         if (Objects.isNull(changeStatus)||Objects.isNull(changeStatus.getId())|| "2".equals(changeStatus.getStatus())){
@@ -76,6 +81,8 @@ public class LinkController {
         boolean updated = linkService.updateById(link);
         return updated == true?ResponseResult.okResult():ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
     }
+
+    @PreAuthorize("@perm.hasPermission('content:link:remove')")
     @DeleteMapping("/{id}")
     public ResponseResult delete(@PathVariable("id")Long id){
         if (Objects.isNull(id)){
@@ -84,6 +91,8 @@ public class LinkController {
         boolean b = linkService.removeById(id);
         return b == true?ResponseResult.okResult():ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
     }
+
+    @PreAuthorize("@perm.hasPermission('content:link:remove')")
     @DeleteMapping()
     public ResponseResult batchDelete(@RequestBody BatchIds batchIds){
         if (Objects.isNull(batchIds)||batchIds.getIds().size() <= 1){

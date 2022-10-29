@@ -36,6 +36,9 @@ public class Comment  {
     private Long toCommentUserId;
     //回复目标评论id
     private Long toCommentId;
+    //发表评论的用户的头像
+    private String avatar;
+
     @TableField(fill= FieldFill.INSERT)
     private Long createBy;
     @TableField(fill= FieldFill.INSERT)

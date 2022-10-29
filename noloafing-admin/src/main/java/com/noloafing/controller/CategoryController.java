@@ -4,7 +4,6 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.noloafing.domain.ResponseResult;
 
-import com.noloafing.domain.beanVO.CategoryVO;
 import com.noloafing.domain.beanVO.DetailCategoryVO;
 import com.noloafing.domain.dto.CategoryDto;
 import com.noloafing.domain.entity.Category;
@@ -14,7 +13,6 @@ import com.noloafing.service.CategoryService;
 
 import com.noloafing.utils.BeanCopyUtils;
 import com.noloafing.utils.WebUtils;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -33,14 +31,15 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
+    @PreAuthorize("@perm.hasPermission('content:category:list')")
     @GetMapping("/list")
-    public ResponseResult list(@Param("pageSize") Integer pageSize,@Param("pageNum")Integer pageNum,@Param("status")String status,@Param("name")String name){
+    public ResponseResult list(Integer pageSize,Integer pageNum,String status,String name){
         if (pageNum < 0 || pageSize <0){
             throw new SystemException(AppHttpCodeEnum.SYSTEM_ERROR);
         }
         return categoryService.listCategorys(pageSize,pageNum,status,name);
     }
-
+    @PreAuthorize("@perm.hasPermission('content:category:list')")
     @GetMapping("/{id}")
     public ResponseResult getCategory(@PathVariable("id") Integer id){
         if (Objects.isNull(id) || id <= 0){
@@ -50,25 +49,25 @@ public class CategoryController {
         DetailCategoryVO categoryVO = BeanCopyUtils.copyBean(category, DetailCategoryVO.class);
         return ResponseResult.okResult(categoryVO);
     }
-
+    @PreAuthorize("@perm.hasPermission('content:category:list')")
     @PutMapping()
     public ResponseResult updateCategory(@RequestBody CategoryDto categoryDto){
         return categoryService.updateCategory(categoryDto);
     }
-
+    @PreAuthorize("@perm.hasPermission('content:category:list')")
     @PutMapping("/status")
     public ResponseResult updateStatus(@RequestBody CategoryDto categoryDto){
         return categoryService.updateStatus(categoryDto);
     }
-
+    @PreAuthorize("@perm.hasPermission('content:category:list')")
     @PostMapping()
     public ResponseResult addCategory(@RequestBody CategoryDto categoryDto){
         return categoryService.saveCategory(categoryDto);
     }
-
+    @PreAuthorize("@perm.hasPermission('content:category:list')")
     @DeleteMapping("/{id}")
     public ResponseResult deleteCategory(@PathVariable("id")String id){
-        //TODO 暂时先以切分数组的delete请求方式批量删除 后续优化前端 使用PUT单独完成批量删除
+        //这里使用分割,的形式处理rest风格的批量删除
         String[] arr = id.split(",");
         List<Long> ids = new ArrayList<>();
         for (String str:arr) {

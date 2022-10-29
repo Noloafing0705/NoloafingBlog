@@ -4,6 +4,7 @@ public enum AppHttpCodeEnum {
     // 成功
     SUCCESS(200,"操作成功"),
     // 登录
+    REQUIRE_PHONE_NUMBER(400,"手机号不能为空"),
     NEED_LOGIN(401,"需要登录后操作"),
     NO_OPERATOR_AUTH(403,"无权限操作"),
     SYSTEM_ERROR(500,"出现错误"),
@@ -31,6 +32,12 @@ public enum AppHttpCodeEnum {
     REQUIRED_STATUS(522,"状态不能为空"),
     UPDATE_FAILED(600,"更新失败"),
     OPERATE_FAILED(601,"操作失败"),
+    MENU_CONFLICT(602,"操作失败,与上级菜单冲突!"),
+    MENU_INCLUDE_CHILD(602,"目标有子菜单，删除失败!"),
+    REQUIRED_ROLE(10001,"角色选择不能为空!"),
+    CAN_NOT_OPERATE_CUR_USER(20001,"无法操作当前用户!"),
+    USER_NOT_EXIST(50001,"用户不存在"),
+    REFRESH_TOKEN_EXPOSED(50002,"用户过期")
     ;
     int code;
     String msg;

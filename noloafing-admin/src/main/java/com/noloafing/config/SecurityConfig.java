@@ -1,6 +1,7 @@
 package com.noloafing.config;
 
 import com.noloafing.filter.JwtAuthenticationTokenFilter;
+import com.noloafing.service.AdminDetailServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import javax.annotation.Resource;
+
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -29,6 +33,9 @@ public class SecurityConfig {
 
     @Autowired
     private AccessDeniedHandler accessDeniedHandler;
+
+    @Resource
+    private AdminDetailServiceImpl adminDetailService;
 
     /**
      * 配置密码加密方式
@@ -54,6 +61,7 @@ public class SecurityConfig {
                 //不通过Session获取SecurityContext
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
+                //.rememberMe().and()
                 .authorizeRequests()
                 // 对于登录接口 允许匿名访问
                 .antMatchers("/user/login").anonymous()
@@ -67,6 +75,9 @@ public class SecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
                 //配置授权异常处理器
                 .accessDeniedHandler(accessDeniedHandler)
-                .and().build();
+                .and()
+                .build();
     }
+
+
 }

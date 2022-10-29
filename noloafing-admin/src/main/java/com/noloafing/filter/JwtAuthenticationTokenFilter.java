@@ -21,6 +21,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Objects;
 
 @Component
@@ -55,6 +56,12 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             WebUtils.renderString(response, JSON.toJSONString(result));
             return;
         }
+        /*Date issuedAt = claims.getIssuedAt();
+        if (issuedAt.getTime() < loginUser.getIssueAt().getTime()){
+            ResponseResult result = ResponseResult.errorResult(AppHttpCodeEnum.USER_TOKEN_EXPOSED);
+            WebUtils.renderString(response, JSON.toJSONString(result));
+            return;
+        }*/
         //存入SecurityContextHolder
         //TODO 获取权限信息并存入
         UsernamePasswordAuthenticationToken authenticationToken =  new UsernamePasswordAuthenticationToken(loginUser, null, null); //new UsernamePasswordAuthenticationToken(loginUser, null);
