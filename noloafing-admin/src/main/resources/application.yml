@@ -1,6 +1,13 @@
 server:
   port: 8989
 spring:
+  redis:
+    database: 1
+    password:
+    host: localhost
+    port: 6379
+    timeout: 5000
+
   datasource:
     url: jdbc:mysql://localhost:3306/nl_blog?characterEncoding=utf-8&serverTimezone=UTC
     username: root
@@ -31,6 +38,28 @@ spring:
     multipart:
       max-file-size: 2MB
       max-request-size: 5MB
+
+  #邮箱服务配置
+  mail:
+     # 默认的字符集
+    default-encoding: UTF-8
+    # smtp服务器主机地址
+    host: smtp.163.com
+    # 发送者邮箱账号
+    username: mufei9131520@163.com
+    nickname: NoloafingBlog
+    # 提供发送邮件服务的邮箱授权码
+    password: HCJAMJPALBPGLQSN
+    properties:
+      mail:
+        # 是否开启debug模式
+        debug: true
+        smtp:
+          # 是否开启权限验证
+          auth: true
+          # 是否开启SSL验证
+          ssl:
+            enable: true
 
 mybatis-plus:
   configuration:

@@ -106,4 +106,5 @@ public class ContentController {
         boolean b = articleService.removeBatchByIds(ids);
         return b == true ? ResponseResult.okResult():ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
     }
+
 }

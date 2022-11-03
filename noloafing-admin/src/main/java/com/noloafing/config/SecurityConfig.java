@@ -65,6 +65,7 @@ public class SecurityConfig {
                 .authorizeRequests()
                 // 对于登录接口 允许匿名访问
                 .antMatchers("/user/login").anonymous()
+                .antMatchers("/user/verify").anonymous()
                 // 除上面外的所有请求全部需要认证
                 .anyRequest().authenticated()
                 .and().logout().disable()//自定义的退出登录接口与Security冲突，修改原本的接口方法不可用

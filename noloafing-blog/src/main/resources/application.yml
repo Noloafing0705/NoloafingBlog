@@ -1,6 +1,16 @@
 server:
   port: 7777
 spring:
+  # 关闭thymeleaf缓存
+  thymeleaf:
+    cache: false
+
+  redis:
+    database: 0
+    password:
+    host: localhost
+    port: 6379
+    timeout: 5000
   datasource:
     url: jdbc:mysql://localhost:3306/nl_blog?characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
@@ -19,6 +29,8 @@ spring:
     testOnBorrow: false
     testOnReturn: false
     poolPreparedStatements: true
+    #关闭输出信息 discard long time none received connection
+    use-ping-method: false
 
     #配置监控统计拦截的filters，stat:监控统计、log4j：日志记录、wall：防御sql注入
     #如果允许时报错  java.lang.ClassNotFoundException: org.apache.log4j.Priority
@@ -27,11 +39,35 @@ spring:
     maxPoolPreparedStatementPerConnectionSize: 20
     useGlobalDataSourceStat: true
     connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
-
   servlet:
     multipart:
       max-file-size: 2MB
       max-request-size: 5MB
+
+  #邮箱服务配置
+  mail:
+    # 默认的字符集
+    default-encoding: UTF-8
+    # smtp服务器主机地址
+    host: smtp.163.com
+    # 发送者邮箱账号
+    username: mufei9131520@163.com
+    nickname: NoloafingBlog
+    # 提供发送邮件服务的邮箱授权码
+    password: HCJAMJPALBPGLQSN
+    properties:
+      mail:
+        # 是否开启debug模式
+        debug: true
+        smtp:
+          # 是否开启权限验证
+          auth: true
+          # 是否开启SSL验证
+          ssl:
+            enable: true
+
+
+
 mybatis-plus:
   configuration:
     # 日志
@@ -48,3 +84,9 @@ oss:
   secretKey: H3bJtkvGWBPiW0A3By5qhmoXPW3ldQBTSeEJMDm_
   bucket: noloafing-blog
   url: 'http://cdn.noloafing.icu/'
+
+
+
+
+
+

@@ -1,8 +1,12 @@
 package com.noloafing.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.noloafing.baiduAI.BaiduAICheck;
+import com.noloafing.baiduAI.HttpUtil;
+import com.noloafing.baiduAI.TextCheckReturn;
 import com.noloafing.constant.ArticleConstant;
 import com.noloafing.domain.ResponseResult;
 import com.noloafing.domain.beanVO.CommentVo;
@@ -14,11 +18,14 @@ import com.noloafing.mapper.CommentMapper;
 import com.noloafing.mapper.UserMapper;
 import com.noloafing.service.CommentService;
 import com.noloafing.utils.BeanCopyUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.net.URLEncoder;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +41,10 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private UserMapper userMapper;
     @Autowired
     private CommentMapper commentMapper;
+
+
+
+
 
     @Override
     public ResponseResult getCommentList(String commentType, Long articleId, Integer pageNum, Integer pageSize) {
@@ -65,13 +76,29 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     @Override
     public ResponseResult addComment(Comment comment) {
-        //TODO 对评论的安全性校验 例如不能为空 不能包含敏感词
         if (!StringUtils.hasText(comment.getContent())) {
-            throw new SystemException(AppHttpCodeEnum.CONTENT_NOT_NULL);
+            return  ResponseResult.errorResult(AppHttpCodeEnum.CONTENT_NOT_NULL);
         }
-        commentMapper.insert(comment);
+        String text =comment.getContent();
+        try {
+            String access_token = BaiduAICheck.getAuth();
+            //设置请求的编码
+            String param = "text=" + URLEncoder.encode(text, "UTF-8");
+            //调用文本审核接口并取得结果
+            String result = HttpUtil.post(BaiduAICheck.CHECK_TEXT_URL, access_token, param);
+            TextCheckReturn checkReturn = JSON.parseObject(result, TextCheckReturn.class);
+            //如果合规
+            if (checkReturn.getConclusionType()!=null && checkReturn.getConclusionType().equals(1)){
+                commentMapper.insert(comment);
+                return ResponseResult.okResult();
+            }
+            //如果疑似，不合规，
+            return ResponseResult.errorResult(AppHttpCodeEnum.COMMENT_INCLUDE_BAD_COTENT);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new SystemException(AppHttpCodeEnum.COMMENT_CONTENT_CHECKED_FALSE);
+        }
 
-        return ResponseResult.okResult();
     }
 
     private List<CommentVo> commentVoList(List<Comment> comments) {
@@ -80,7 +107,6 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             //获取评论人的昵称
             String nickName = userMapper.selectById(commentVo.getCreateBy()).getNickName();
             //回复评论的目标的人的userId 为 -1(即是父评论)
-            // TODO 条件判断或许需要再优化
             if (commentVo.getToCommentUserId() == ArticleConstant.COMMENT_ROOT_ID) {
                 return commentVo.setUsername(nickName);
             }

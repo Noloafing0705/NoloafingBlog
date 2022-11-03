@@ -68,7 +68,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapper.eq(Objects.nonNull(categoryId)&&categoryId>0,Article::getCategoryId,categoryId);
         //查询分类下正常的文章（如果没有传入ID那么就是查询所有的文章）
         queryWrapper.eq(Article::getStatus,ArticleConstant.STATUS_NORMAL)
-                    .orderByDesc(Article::getIsTop);//根据置顶排序
+                    .orderByDesc(Article::getIsTop)//根据置顶排序
+                    .orderByDesc(Article::getCreateTime);
         //分页
         Page<Article> page = new Page<>(pageNum, pageSize);
         List<Article> articles = page(page, queryWrapper).getRecords();
@@ -88,7 +89,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             if (article != null){
                 //从redis中获取viewCount
                 article = redisViewCount(article);
-                //TODO 如果id不是有效值 查询为空的异常处理的处理方式需要优化
                 String categoryName = categoryMapper.selectById(article.getCategoryId()).getName();
                 ArticleDetailVo articleDetailVo = BeanCopyUtils.copyBean(article, ArticleDetailVo.class);
                 articleDetailVo.setCategoryName(categoryName);

@@ -112,6 +112,7 @@ public class UserController {
         if (Objects.isNull(batchIds)){
             return ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
         }
-        return ResponseResult.okResult();
+        List<Long> ids = batchIds.getIds();
+        return userService.deleteUserByIds(ids);
     }
 }

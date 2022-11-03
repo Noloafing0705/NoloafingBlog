@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.noloafing.constant.MailConstants;
 import com.noloafing.domain.ResponseResult;
 import com.noloafing.domain.beanVO.*;
 import com.noloafing.domain.dto.AddUserDto;
+import com.noloafing.domain.dto.RegistUserDto;
 import com.noloafing.domain.dto.UpdateUserDto;
 import com.noloafing.domain.entity.Role;
 import com.noloafing.domain.entity.User;
@@ -17,15 +19,28 @@ import com.noloafing.exception.SystemException;
 import com.noloafing.mapper.RoleMapper;
 import com.noloafing.mapper.UserMapper;
 import com.noloafing.mapper.UserRoleMapper;
+import com.noloafing.service.MailService;
 import com.noloafing.service.UserService;
 import com.noloafing.utils.BeanCopyUtils;
+import com.noloafing.utils.DateUtils;
+import com.noloafing.utils.MailCodeUtils;
+import com.noloafing.utils.RedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailMessage;
+import org.springframework.mail.MailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
+import javax.annotation.Resource;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -49,6 +64,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private RoleMapper roleMapper;
 
+    @Autowired
+    private MailService mailService;
+
+    @Autowired
+    private RedisCache redisCache;
+
+    @Resource
+    private TemplateEngine templateEngine;
+
     @Override
     public ResponseResult getUserInfo(Long userId) {
         User user = getById(userId);
@@ -68,37 +92,71 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public ResponseResult registerUser(User user) {
+    public ResponseResult registerUser(RegistUserDto  userDto) {
+        if (Objects.isNull(userDto)){
+            return ResponseResult.errorResult(AppHttpCodeEnum.OPERATE_FAILED);
+        }
+        if (!StringUtils.hasText(userDto.getEmailCode())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.REQUIRE_CHECK_CODE);
+        }
         //校验数据
-        if (!StringUtils.hasText(user.getUserName())){
-            throw new SystemException(AppHttpCodeEnum.REQUIRE_USERNAME);
+        if (!StringUtils.hasText(userDto.getUserName())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.REQUIRE_USERNAME);
         }
-        if (!StringUtils.hasText(user.getPassword())){
-            throw new SystemException(AppHttpCodeEnum.REQUIRE_PASSWORD);
+        if (!StringUtils.hasText(userDto.getPassword())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.REQUIRE_PASSWORD);
         }
-        if (!StringUtils.hasText(user.getNickName())){
-            throw new SystemException(AppHttpCodeEnum.REQUIRE_NICKNAME);
+        if (!StringUtils.hasText(userDto.getNickName())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.REQUIRE_NICKNAME);
         }
-        if (!StringUtils.hasText(user.getEmail())){
-            throw new SystemException(AppHttpCodeEnum.REQUIRE_EMAIL);
+        if (!StringUtils.hasText(userDto.getEmail())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.REQUIRE_EMAIL);
         }
-        //TODO 用户名、昵称合法性校验 邮箱、密码合法性校验
-        if (!user.getPassword().equals(user.getRePassword())){
-            throw new SystemException(AppHttpCodeEnum.PASSWORD_MAKE_SURE);
+
+        //确认密码是否成功
+        if (!userDto.getPassword().equals(userDto.getRePassword())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PASSWORD_MAKE_SURE);
+        }
+        //确认邮箱是否符合
+        if(!userDto.getEmail().matches("\\w[-\\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\\.)+[A-Za-z]{2,14}")){
+            return ResponseResult.errorResult(AppHttpCodeEnum.EMAIL_FORMAT_FAILED);
+        }
+        //确认用户名是否符合 6-12位英文字母+数字+下划线
+        if (!userDto.getUserName().matches("^[a-zA-Z0-9_]{6,15}$")){
+            return ResponseResult.errorResult(AppHttpCodeEnum.USERNAME_FORMAT_FAILED);
+        }
+        //确认昵称是否符合 长度2-8 只能包含中英文和数字
+        if (!userDto.getNickName().matches("^[\\u4e00-\\u9fa5a-zA-Z0-9]{2,8}$")){
+            return ResponseResult.errorResult(AppHttpCodeEnum.NICKNAME_FORMAT_FAILED);
+        }
+        //确认密码是否符合 至少包含一位字母和特殊字符 长度9-16
+        if (!userDto.getPassword().matches("^(?=.*[a-zA-Z])(?=.*[^\\da-zA-Z\\s]).{9,16}$")){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PASSWORD_FORMAT_FAILED);
         }
         //检查用户名，昵称，邮箱是否已经存在
-        if (userNameExist(user.getUserName())){
-            throw new SystemException(AppHttpCodeEnum.USERNAME_EXIST);
+        if (userNameExist(userDto.getUserName())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.USERNAME_EXIST);
         }
-        if (nickNameExist(user.getNickName())){
-            throw new SystemException(AppHttpCodeEnum.NICKNAME_EXIST);
+        if (nickNameExist(userDto.getNickName())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.NICKNAME_EXIST);
         }
-        if (emailExist(user.getEmail())){
-            throw new SystemException(AppHttpCodeEnum.EMAIL_EXIST);
+        if (emailExist(userDto.getEmail())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.EMAIL_EXIST);
         }
+        //获取redis中的验证码对比
+        String code = redisCache.getCacheObject(userDto.getEmail() + MailConstants.EMAIL_CODE);
+        if (code == null){
+            return ResponseResult.errorResult(AppHttpCodeEnum.EMAIL_CODE_EXPIRE);
+        }
+        if (!userDto.getEmailCode().equals(code)){
+            return ResponseResult.errorResult(AppHttpCodeEnum.CHECK_CODE_FAILED);
+        }
+        //验证码通过删除该验证码
+        redisCache.deleteObject(userDto.getEmail() + MailConstants.EMAIL_CODE);
         //密码加密
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
+        String encodedPassword = passwordEncoder.encode(userDto.getPassword());
+        userDto.setPassword(encodedPassword);
+        User user = BeanCopyUtils.copyBean(userDto, User.class);
         //存入数据库
         save(user);
         return ResponseResult.okResult();
@@ -187,14 +245,115 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
 
+    @Transactional
     @Override
     public ResponseResult deleteUserById(Long id) {
         deleteById(id);
         return ResponseResult.okResult();
     }
 
+    @Override
+    public ResponseResult sendEmailCode(RegistUserDto userDto) {
+        Boolean validUser = validRegisterUserInfo(userDto);
+        if (validUser){
+            //检查用户名，昵称，邮箱是否已经存在
+            if (userNameExist(userDto.getUserName())){
+                return ResponseResult.errorResult(AppHttpCodeEnum.USERNAME_EXIST);
+            }
+            if (nickNameExist(userDto.getNickName())){
+                return ResponseResult.errorResult(AppHttpCodeEnum.NICKNAME_EXIST);
+            }
+            if (emailExist(userDto.getEmail())){
+                return ResponseResult.errorResult(AppHttpCodeEnum.EMAIL_EXIST);
+            }
+
+            //获取要发送对象的邮箱
+            String  toSend = userDto.getEmail();
+            // 设置该邮箱申请发送的次数
+            String userCountKey = toSend+ MailConstants.EMAIL_TIMES;
+            Integer times = redisCache.getCacheObject(userCountKey);
+            // 如果第一次请求验证码
+            if(times == null){
+                //设置次数为1
+                redisCache.setCacheObject(userCountKey,1);
+                redisCache.expire(userCountKey, 60 * 30);
+            }else if(times <=4){
+                //半小时内请求5次以内
+                // 每一次请求次数会加一
+                redisCache.setCacheObject(userCountKey,times+1);
+            }else{ //time >= 5 半小时内连续请求五次 当天封禁
+                Integer secondsOneDay = DateUtils.getRemainSecondsOneDay(new Date());
+                redisCache.expire(userCountKey, secondsOneDay, TimeUnit.SECONDS);
+                return ResponseResult.errorResult(AppHttpCodeEnum.ADMIN_CODE_REQUEST_MUCH);
+            }
+            // 1.生成校验码
+            String code = MailCodeUtils.getCode();
+            // 2.设置邮件html内容
+            String message = "详情：您正在尝试使用该邮箱注册操作，若非是您本人的行为，请忽略!";
+            Context context = new Context();
+            context.setVariable("message", message);
+            context.setVariable("code", code);
+            String mail = templateEngine.process("mailtemplate.html", context);
+            // 3.发送邮件
+            mailService.sendHtmlMail(toSend, "邮箱验证码", mail);
+            // 3.发送成功后 存到redis 以邮箱为key value为校验码 设置过期时间 以及次数
+            // 键值对
+            redisCache.setCacheObject(toSend+MailConstants.EMAIL_CODE, code);
+            // 设置过期时间（2分钟内有效）
+            redisCache.expire(toSend+MailConstants.EMAIL_CODE, 60 * 2);
+            //返回信息
+            return  ResponseResult.okResult();
+        }
+        return ResponseResult.errorResult(AppHttpCodeEnum.REGISTER_INFO_ERROR);
+    }
+
+    @Transactional
+    @Override
     public ResponseResult deleteUserByIds(List<Long> id) {
+        id.forEach(once -> deleteById(once));
         return ResponseResult.okResult();
+    }
+
+    //校验注册用户的信息是否有效
+    private Boolean validRegisterUserInfo(RegistUserDto userDto){
+        if (Objects.isNull(userDto)){
+            return false;
+        }
+        //校验数据
+        if (!StringUtils.hasText(userDto.getUserName())){
+            return false;
+        }
+        if (!StringUtils.hasText(userDto.getPassword())){
+            return false;
+        }
+        if (!StringUtils.hasText(userDto.getNickName())){
+            return false;
+        }
+        if (!StringUtils.hasText(userDto.getEmail())){
+            return false;
+        }
+
+        //确认密码是否成功
+        if (!userDto.getPassword().equals(userDto.getRePassword())){
+            return false;
+        }
+        //确认邮箱是否符合
+        if(!userDto.getEmail().matches("\\w[-\\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\\.)+[A-Za-z]{2,14}")){
+            return false;
+        }
+        //确认用户名是否符合 6-12位英文字母+数字+下划线
+        if (!userDto.getUserName().matches("^[a-zA-Z0-9_]{6,15}$")){
+            return false;
+        }
+        //确认昵称是否符合 长度2-8 只能包含中英文和数字
+        if (!userDto.getNickName().matches("^[\\u4e00-\\u9fa5a-zA-Z0-9]{2,8}$")){
+            return false;
+        }
+        //确认密码是否符合 至少包含一位字母和特殊字符 长度9-16
+        if (!userDto.getPassword().matches("^(?=.*[a-zA-Z])(?=.*[^\\da-zA-Z\\s]).{9,16}$")){
+            return false;
+        }
+        return true;
     }
 
 

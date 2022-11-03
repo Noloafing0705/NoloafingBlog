@@ -55,7 +55,6 @@ public class CommentController {
     @PostMapping()
     @ApiOperation(value = "发布和回复评论",notes = "实现评论的发布与回复")
     public ResponseResult addComment(@RequestBody Comment comment){
-        //TODO 后期优化为DTO
         return commentService.addComment(comment);
     }
 }

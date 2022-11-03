@@ -4,9 +4,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.noloafing.domain.ResponseResult;
 import com.noloafing.domain.beanVO.UserInfoVo;
 import com.noloafing.domain.dto.AddUserDto;
+import com.noloafing.domain.dto.RegistUserDto;
 import com.noloafing.domain.dto.UpdateUserDto;
 import com.noloafing.domain.entity.User;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 
 /**
@@ -22,7 +25,7 @@ public interface UserService extends IService<User> {
 
     ResponseResult updateUserInfo(UserInfoVo user);
 
-    ResponseResult registerUser(User user);
+    ResponseResult registerUser(RegistUserDto userDto);
 
     ResponseResult listUsers(Integer pageNum, Integer pageSize, String userName, String phonenumber, String status);
 
@@ -33,4 +36,8 @@ public interface UserService extends IService<User> {
     ResponseResult updateUser(UpdateUserDto updateUserDto);
 
     ResponseResult deleteUserById(Long id);
+
+    ResponseResult sendEmailCode(RegistUserDto userDto);
+
+    ResponseResult deleteUserByIds(List<Long> ids);
 }
